@@ -35,3 +35,38 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import "@ionic/angular/css/palettes/dark.system.css";
+
+:root {
+    /* Light Mode Variables */
+    --primary-color: #543c92;
+    --secondary-color: #7762b3;
+    --text-color: #2d195b;
+    --icon-color: #666666;
+    --accent-color: #ff85c0;
+    --background-gradient: linear-gradient(145deg, #f5f5f5, #e0e0e0);
+    --card-color: rgba(255, 255, 255, 0.9);
+    --card-background: rgba(240, 240, 240, 0.95);
+    --button-background: #6b4ba7;
+    --button-text-color: #ffffff;
+    --footer-bg: rgba(245, 245, 245, 0.9);
+    --forecast-bg: rgba(220, 220, 240, 0.85);
+  }
+  
+  body.dark {
+    /* Dark Mode Variables */
+    --primary-color: #1d1b30;
+    --secondary-color: #2b2b44;
+    --text-color: #e0e0e0;
+    --icon-color: #f5f5f5;
+    --accent-color: #aa82c5;
+    --background-gradient: linear-gradient(145deg, #1a1a2e, #0f0f2d);
+    --card-color: rgba(50, 50, 50, 0.85);
+    --card-background: rgba(30, 30, 30, 0.9);
+    --button-background: #332f63;
+    --button-text-color: #e0e0e0;
+    --footer-bg: rgba(40, 40, 60, 0.9);
+    --forecast-bg: rgba(60, 60, 80, 0.85);
+  }
+  
+  
+  

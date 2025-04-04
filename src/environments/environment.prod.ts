@@ -1,3 +1,5 @@
 export const environment = {
-  production: true
+  production: false,
+  apiKey: '',
+  apiUrl: 'https://api.openweathermap.org/data/2.5/'
 };

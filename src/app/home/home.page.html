@@ -1,20 +1,133 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
+    <ion-title>Weather Forecast</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="toggleSearch()">
+        <ion-icon name="search-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+      <ion-button (click)="openSettings()">
+        <ion-icon name="settings-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+<ion-content>
+  <div *ngIf="isOffline" class="offline-notice">
+    <ion-icon name="cloud-offline-outline" class="offline-icon"></ion-icon>
+      You are offline. Displaying cached data.
   </div>
+  
+
+  <div class="search-bar" *ngIf="showSearch">
+    <ion-item>
+      <ion-input placeholder="Enter city name" [(ngModel)]="cityName"></ion-input>
+      <ion-button (click)="fetchWeatherByCity()">Search</ion-button>
+    </ion-item>
+  </div>
+
+  <ion-modal [isOpen]="showSettings" (willDismiss)="closeSettings()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Settings</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeSettings()">Close</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content>
+        <div class="settings-panel">
+          <ion-item>
+            <ion-label>Temperature Unit</ion-label>
+            <ion-segment [(ngModel)]="tempUnitSelection" (ionChange)="updateTemperatureUnit($event)">
+              <ion-segment-button value="metric">
+                <ion-label>°C</ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="imperial">
+                <ion-label>°F</ion-label>
+              </ion-segment-button>
+            </ion-segment>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>Weather Alerts</ion-label>
+            <ion-toggle [(ngModel)]="alertSelection" (ionChange)="toggleWeatherAlerts($event)"></ion-toggle>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>Dark Mode</ion-label>
+            <ion-toggle [(ngModel)]="isDarkMode" (ionChange)="toggleDarkMode($event)"></ion-toggle>
+          </ion-item>
+
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <div class="weather-container" *ngIf="weatherData">
+    <div class="current-weather">
+      <h1>{{ weatherData.name }}</h1>
+      <img [src]="getWeatherIcon(weatherData?.weather[0]?.main, true)" class="weather-icon" />
+      <h2>{{ weatherData.main.temp.toFixed(2) }} {{ temperatureUnit === 'metric' ? '°C' : '°F' }}</h2>
+      <p>{{ weatherData.weather[0].description }}</p>
+      <div class="details">
+        <p>Humidity: {{ weatherData.main.humidity }}%</p>
+        <p>Wind: {{ weatherData.wind.speed.toFixed(2) }} {{ temperatureUnit === 'metric' ? 'km/h' : 'mph' }}</p>
+        <p>Updated: {{ currentTime }}</p>
+      </div>
+    </div>
+
+    <div class="hourly-forecast">
+      <h3>24-hour Forecast</h3>
+      <ion-grid class="forecast-grid">
+        <ion-row>
+          <ion-col *ngFor="let forecast of hourlyForecast" class="forecast-item">
+            <ion-card class="hour-card">
+              <ion-card-header>
+                {{ forecast.time }}
+              </ion-card-header>
+              <ion-card-content>
+                <img [src]="getWeatherIcon(forecast.weather, forecast.isDaytime)" class="weather-icon-small" />
+                <p>{{ forecast.temp }}{{ temperatureUnit === 'metric' ? '°C' : '°F' }}</p>
+                <p>Wind: {{ forecast.wind }}</p>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
+
+    <div class="five-day-forecast">
+      <h3>5-day Forecast</h3>
+      <ion-grid class="forecast-grid">
+        <ion-row>
+          <ion-col *ngFor="let day of fiveDayForecast" class="forecast-item">
+            <ion-card class="day-card">
+              <ion-card-header>
+                {{ day.dt_txt }}
+              </ion-card-header>
+              <ion-card-content>
+                <img [src]="getWeatherIcon(day?.weather, true)" class="weather-icon-small" />
+                <p>{{ day.temp }}{{ temperatureUnit === 'metric' ? '°C' : '°F' }}</p>
+                <p>Wind: {{ day.wind }}</p>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
+
+    <div class="footer-summary">
+      <div class="sunrise-container">
+        <img src="assets/weather-icons/sunrise.png" alt="Sunrise" class="sun-icon" />
+        <p>Sunrise: {{ weatherData.sys.sunrise * 1000 | date: 'shortTime' }}</p>
+      </div>
+      <div class="sunset-container">
+        <img src="assets/weather-icons/sunset.png" alt="Sunset" class="sun-icon" />
+        <p>Sunset: {{ weatherData.sys.sunset * 1000 | date: 'shortTime' }}</p>
+      </div>
+    </div>
+  </div>
+
 </ion-content>
