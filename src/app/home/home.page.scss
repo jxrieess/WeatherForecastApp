@@ -49,29 +49,31 @@ ion-content {
 
 .hourly-forecast, .five-day-forecast {
   background: var(--forecast-bg);
-  border-radius: 20px;
-  margin: 10px;
-  padding: 15px;
+  border-radius: 12px;
+  margin: 6px;
+  padding: 8px;
   text-align: center;
 
   h3 {
-    font-size: 24px;
-    margin-bottom: 10px;
+    font-size: 20px;
+    margin-bottom: 8px;
     color: var(--text-color);
   }
 
   ion-card {
     background: var(--card-color);
-    border-radius: 20px;
-    margin: 8px;
-    padding: 12px;
+    border-radius: 8px;
+    margin: 5px;
+    padding: 4px;
     text-align: center;
     color: var(--text-color);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    max-width: 200px; 
+    width: 80%;
   }
 
   ion-card-header {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: bold;
     color: var(--text-color);
   }
@@ -84,13 +86,13 @@ ion-content {
   }
 
   .weather-icon-small {
-    width: 60px;
-    height: 60px;
-    margin: 5px 0;
+    width: 50px;
+    height: 50px;
+    margin: 4px 0;
   }
 
   p {
-    font-size: 20px;
+    font-size: 14px;
     margin: 2px 0;
     color: var(--text-color);
   }
@@ -103,11 +105,11 @@ ion-content {
 
   ion-row {
     flex-wrap: nowrap;
-    gap: 12px;
+    gap: 8px;
   }
 
   ion-col {
-    min-width: 100px;
+    min-width: 80px;
     flex-shrink: 0;
   }
 
@@ -197,3 +199,4 @@ ion-toggle, ion-segment-button, ion-input {
     margin: 0;
   }
 }
+

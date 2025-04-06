@@ -17,7 +17,7 @@ export class HomePage implements OnInit {
   hourlyForecast: any[] = [];
   fiveDayForecast: any[] = [];
   currentTime: string = new Date().toLocaleTimeString();
-  apiKey = '';
+  apiKey = 'a886d4319cc77bab76571802b2e116ce';
   cityName: string = '';
   showSearch: boolean = false;
   temperatureUnit: string = 'metric';
@@ -39,6 +39,12 @@ export class HomePage implements OnInit {
     setInterval(() => {
       this.currentTime = new Date().toLocaleTimeString();
     }, 1000);
+
+    if (!this.weatherData) {
+      console.log("No weather data available.");
+    } else {
+      console.log("Weather data loaded:", this.weatherData);
+    }
   }
 
   async checkNetworkStatus() {
@@ -116,6 +122,34 @@ export class HomePage implements OnInit {
     this.applyDarkMode();
   }
 
+  async fetchWeatherByCity() {
+    try {
+      if (!this.cityName || this.cityName.trim() === '') {
+        alert('Please enter a city name.');
+        return;
+      }
+      const unit = this.temperatureUnit === 'metric' ? 'metric' : 'imperial';
+      const weatherResponse = await axios.get(
+        `https://api.openweathermap.org/data/2.5/weather?q=${this.cityName}&appid=${this.apiKey}&units=metric`
+      );
+      if (!weatherResponse.data) {
+        alert('Weather data not available. Please try again.');
+        return;
+      }
+      
+      this.weatherData = weatherResponse.data;
+      this.cacheWeatherData(this.weatherData, 'currentWeather');
+      const lat = this.weatherData.coord.lat;
+      const lon = this.weatherData.coord.lon;
+      await this.fetchForecast(lat, lon);
+      this.cityName = '';
+      this.showSearch = false;
+    } catch (error) {
+      console.error('Error fetching weather by city:', error);
+      alert('City not found. Please enter a valid city name.');
+    }
+  }
+
   async getLocationAndWeather() {
     try {
       if (this.isOffline) {
@@ -129,6 +163,7 @@ export class HomePage implements OnInit {
       await this.fetchForecast(lat, lon);
     } catch (error) {
       console.error('Error getting location or weather:', error);
+      alert("Failed to get location. Please enable GPS.");
       await this.loadCachedWeather('currentWeather');
     }
   }
@@ -153,10 +188,15 @@ export class HomePage implements OnInit {
         console.log('Loaded cached data:', this.weatherData);
       } else {
         console.warn('No cached data found.');
-        alert('No cached weather data available.');
+        if (this.isOffline) {
+          alert('No cached weather data available. Please connect to the internet.');
+        }
       }
     } catch (error) {
       console.error('Error loading cached data:', error);
+      if (this.isOffline) {
+        alert('Error accessing cached weather data. Please connect to the internet.');
+      }
     }
   }
 
@@ -169,9 +209,9 @@ export class HomePage implements OnInit {
       this.weatherData = weatherResponse.data;
       await Preferences.set({ key: 'currentWeather', value: JSON.stringify(this.weatherData) });
       console.log('Weather data fetched:', this.weatherData);
-       } catch (error) {
-        console.error('Error fetching weather data:', error);
-        await this.loadCachedWeather('currentWeather');
+    } catch (error) {
+      console.error('Error fetching weather data:', error);
+      await this.loadCachedWeather('currentWeather');
     }
   }
   
@@ -194,103 +234,100 @@ export class HomePage implements OnInit {
       return false;
     }
   }
-  
-  async fetchWeatherByCity() {
-    try {
-      if (this.cityName.trim() === '') {
-        alert('Please enter a city name.');
-        return;
-      }
-      const unit = this.temperatureUnit === 'metric' ? 'metric' : 'imperial';
-      const weatherResponse = await axios.get(
-        `https://api.openweathermap.org/data/2.5/weather?q=${this.cityName}&appid=${this.apiKey}&units=metric`
-      );
-      if (!weatherResponse.data) {
-        alert('Weather data not available. Please try again.');
-        return;
-      }
-      
-      this.weatherData = weatherResponse.data;
-      this.cacheWeatherData(this.weatherData, 'currentWeather');
-      const lat = this.weatherData.coord.lat;
-      const lon = this.weatherData.coord.lon;
-      await this.fetchForecast(lat, lon);
-    } catch (error) {
-      console.error('Error fetching weather by city:', error);
-      alert('City not found. Please enter a valid city name.');
-    }
-  }
-  
+
   async fetchForecast(lat: number, lon: number) {
-    try {
+  try {
       const units = this.temperatureUnit === 'metric' ? 'km/h' : 'mph';
       const forecastResponse = await axios.get(
-        `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${this.apiKey}&units=${this.temperatureUnit}`
+          `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${this.apiKey}&units=${this.temperatureUnit}`
       );
       const forecastData = forecastResponse.data.list;
       console.log('Fetched forecast data:', forecastData);
 
       this.hourlyForecast = [];
       let addedHours = new Set();
-      for (let i = 0; i < forecastData.length - 1; i++) {
-        const current = forecastData[i];
-        const next = forecastData[i + 1];
 
-        const currentTime = new Date(current.dt * 1000);
-        const nextTime = new Date(next.dt * 1000);
+      let currentTime = new Date();
+      currentTime.setMinutes(0, 0, 0); 
 
-        const timeDiff = (nextTime.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
+      const currentWeatherTime = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      const isDaytime = currentTime.getHours() >= 6 && currentTime.getHours() < 18;
 
-        for (let h = 0; h < timeDiff; h++) {
-          const interpolatedTime = new Date(currentTime.getTime() + h * 60 * 60 * 1000);
-          const hourString = interpolatedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      this.hourlyForecast.push({
+          dt: Math.floor(currentTime.getTime() / 1000),
+          time: "Now",
+          temp: this.weatherData.main.temp.toFixed(2),
+          wind: `${this.weatherData.wind.speed.toFixed(2)} ${units}`,
+          weather: this.weatherData.weather[0].main,
+          isDaytime: isDaytime
+      });
+
+      addedHours.add("Now");
+      currentTime.setHours(currentTime.getHours() + 1);
+
+      for (let i = 0; i < forecastData.length; i++) {
+          const current = forecastData[i];
+          const forecastTime = new Date(current.dt * 1000);
+          const hourString = forecastTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
 
           if (addedHours.has(hourString)) continue;
           addedHours.add(hourString);
 
-          let temp = current.main.temp + ((next.main.temp - current.main.temp) * (h / timeDiff));
-          let windSpeed = current.wind.speed + ((next.wind.speed - current.wind.speed) * (h / timeDiff));
+          while (currentTime < forecastTime) {
+              const interpolatedTime = new Date(currentTime.getTime());
+              const interpolatedHourString = interpolatedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
 
-          if (this.temperatureUnit === 'imperial') {
-            temp = (temp * 9 / 5) + 32;
-            windSpeed = windSpeed * 0.621371;
+              if (!addedHours.has(interpolatedHourString)) {
+                  addedHours.add(interpolatedHourString);
+                  const isDaytime = interpolatedTime.getHours() >= 6 && interpolatedTime.getHours() < 18;
+
+                  this.hourlyForecast.push({
+                      dt: Math.floor(interpolatedTime.getTime() / 1000),
+                      time: interpolatedHourString,
+                      temp: current.main.temp.toFixed(2),
+                      wind: `${current.wind.speed.toFixed(2)} ${units}`,
+                      weather: current.weather[0].main,
+                      isDaytime: isDaytime
+                  });
+              }
+              currentTime.setHours(currentTime.getHours() + 1);
           }
-          const isDaytime = interpolatedTime.getHours() >= 6 && interpolatedTime.getHours() < 18;
 
+          const isDaytimeForecast = forecastTime.getHours() >= 6 && forecastTime.getHours() < 18;
           this.hourlyForecast.push({
-            dt: Math.floor(interpolatedTime.getTime() / 1000),
-            time: hourString,
-            temp: temp.toFixed(2),
-            wind: `${windSpeed.toFixed(2)} ${units}`,
-            weather: current.weather[0].main,
-            isDaytime: isDaytime
+              dt: Math.floor(forecastTime.getTime() / 1000),
+              time: hourString,
+              temp: current.main.temp.toFixed(2),
+              wind: `${current.wind.speed.toFixed(2)} ${units}`,
+              weather: current.weather[0].main,
+              isDaytime: isDaytimeForecast
           });
-
-          if (this.hourlyForecast.length >= 24) break;
-        }
-        if (this.hourlyForecast.length >= 24) break;
+          currentTime = new Date(forecastTime.getTime() + 60 * 60 * 1000);
       }
+
+      this.hourlyForecast = this.hourlyForecast.slice(0, 24);
 
       this.fiveDayForecast = forecastData.filter((item: any) => item.dt_txt.includes('12:00:00')).slice(0, 5).map((item: any) => {
         let windSpeed = item.wind.speed;
         if (this.temperatureUnit === 'imperial') {
           windSpeed = windSpeed * 0.621371;
         }
-        return {
-          date: new Date(item.dt * 1000).toLocaleDateString(),
-          temp: item.main.temp.toFixed(2),
-          wind: `${windSpeed.toFixed(2)} ${units}`,
-          weather: item.weather[0].main
-        };
-      });
-      console.log('Processed interpolated hourly forecast:', this.hourlyForecast);
-      console.log('Processed 5-day forecast:', this.fiveDayForecast);
-    } catch (error) {
-      console.error('Error fetching forecast:', error);
-    }
-  }
+          return {
+            date: new Date(item.dt * 1000).toLocaleDateString(),
+            temp: item.main.temp.toFixed(2),
+            wind: `${windSpeed.toFixed(2)} ${units}`,
+            weather: item.weather[0].main
+          };
+       });
 
-    clearCache() {
+      console.log('Processed hourly forecast:', this.hourlyForecast);
+      console.log('Processed 5-day forecast:', this.fiveDayForecast);
+  } catch (error) {
+      console.error('Error fetching forecast:', error);
+  }
+}
+
+  clearCache() {
       localStorage.removeItem('currentWeather');
       localStorage.removeItem('forecastData');
       alert('Cache cleared.');
@@ -303,17 +340,28 @@ export class HomePage implements OnInit {
   
     getWeatherIcon(weather: string, isDaytime: boolean): string {
       if (!weather) return 'assets/weather-icons/sun.png';
+      
       const lowerWeather = weather.toLowerCase();
-      if (isDaytime) {
-        if (lowerWeather.includes('clear')) return 'assets/weather-icons/sun.png';
-        if (lowerWeather.includes('clouds')) return 'assets/weather-icons/cloudy.png';
-        if (lowerWeather.includes('rain') || lowerWeather.includes('drizzle')) return 'assets/weather-icons/raining.png';
-      } else {
-        if (lowerWeather.includes('clear')) return 'assets/weather-icons/night.png';
-        if (lowerWeather.includes('clouds')) return 'assets/weather-icons/cloudy-night.png';
-        if (lowerWeather.includes('rain') || lowerWeather.includes('drizzle')) return 'assets/weather-icons/raining.png';
+      const currentHour = new Date().getHours();
+      const isDay = currentHour >= 6 && currentHour < 18;
+    
+      const iconMap: { [key: string]: string } = {
+        clear: isDay ? 'sun.png' : 'night.png',
+        clouds: isDay ? 'cloudy.png' : 'cloudy-night.png',
+        rain: 'raining.png',
+        drizzle: 'raining.png',
+        thunderstorm: 'storm.png',
+        snow: 'snow.png',
+        mist: 'mist.png'
+      };
+    
+      for (const key in iconMap) {
+        if (lowerWeather.includes(key)) {
+          return `assets/weather-icons/${iconMap[key]}`;
+        }
       }
-      return 'assets/weather-icons/sun.png';
+    
+      return isDay ? 'assets/weather-icons/sun.png' : 'assets/weather-icons/night.png';
     }
   
 }

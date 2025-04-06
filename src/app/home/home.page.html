@@ -12,13 +12,6 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
-  <div *ngIf="isOffline" class="offline-notice">
-    <ion-icon name="cloud-offline-outline" class="offline-icon"></ion-icon>
-      You are offline. Displaying cached data.
-  </div>
-  
-
   <div class="search-bar" *ngIf="showSearch">
     <ion-item>
       <ion-input placeholder="Enter city name" [(ngModel)]="cityName"></ion-input>
@@ -65,6 +58,12 @@
     </ng-template>
   </ion-modal>
 
+  <ion-content>
+    <div *ngIf="isOffline" class="offline-notice">
+      <ion-icon name="cloud-offline-outline" class="offline-icon"></ion-icon>
+        You are offline. Displaying cached data.
+    </div>
+
   <div class="weather-container" *ngIf="weatherData">
     <div class="current-weather">
       <h1>{{ weatherData.name }}</h1>
@@ -105,7 +104,7 @@
           <ion-col *ngFor="let day of fiveDayForecast" class="forecast-item">
             <ion-card class="day-card">
               <ion-card-header>
-                {{ day.dt_txt }}
+                {{ formatDate(day.date) }}
               </ion-card-header>
               <ion-card-content>
                 <img [src]="getWeatherIcon(day?.weather, true)" class="weather-icon-small" />
