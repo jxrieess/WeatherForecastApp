@@ -33,7 +33,7 @@
         <div class="settings-panel">
           <ion-item>
             <ion-label>Temperature Unit</ion-label>
-            <ion-segment [(ngModel)]="tempUnitSelection" (ionChange)="updateTemperatureUnit($event)">
+            <ion-segment [(ngModel)]="temperatureUnit" (ionChange)="updateTemperatureUnit($event)">
               <ion-segment-button value="metric">
                 <ion-label>°C</ion-label>
               </ion-segment-button>
@@ -44,8 +44,18 @@
           </ion-item>
 
           <ion-item>
+            <ion-label>Wind Speed Unit</ion-label>
+            <ion-select [(ngModel)]="windSpeedUnit" (ionChange)="updateWindSpeedUnit($event)">
+              <ion-select-option value="km/h">km/h</ion-select-option>
+              <ion-select-option value="m/s">m/s</ion-select-option>
+              <ion-select-option value="mph">mph</ion-select-option>
+              <ion-select-option value="knot">knot</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
             <ion-label>Weather Alerts</ion-label>
-            <ion-toggle [(ngModel)]="alertSelection" (ionChange)="toggleWeatherAlerts($event)"></ion-toggle>
+            <ion-toggle [(ngModel)]="weatherAlerts" (ionChange)="toggleWeatherAlerts($event)"></ion-toggle>
           </ion-item>
 
           <ion-item>
@@ -72,13 +82,13 @@
       <p>{{ weatherData.weather[0].description }}</p>
       <div class="details">
         <p>Humidity: {{ weatherData.main.humidity }}%</p>
-        <p>Wind: {{ weatherData.wind.speed.toFixed(2) }} {{ temperatureUnit === 'metric' ? 'km/h' : 'mph' }}</p>
+        <p>Wind: {{ convertWindSpeed(weatherData.wind.speed) }} </p>
         <p>Updated: {{ currentTime }}</p>
       </div>
     </div>
 
     <div class="hourly-forecast">
-      <h3>24-hour Forecast</h3>
+      <h3>Hourly Forecast</h3>
       <ion-grid class="forecast-grid">
         <ion-row>
           <ion-col *ngFor="let forecast of hourlyForecast" class="forecast-item">
@@ -89,7 +99,9 @@
               <ion-card-content>
                 <img [src]="getWeatherIcon(forecast.weather, forecast.isDaytime)" class="weather-icon-small" />
                 <p>{{ forecast.temp }}{{ temperatureUnit === 'metric' ? '°C' : '°F' }}</p>
+                <p class="description">{{ forecast.description }}</p>
                 <p>Wind: {{ forecast.wind }}</p>
+                <p>Humidity: {{ forecast.humidity }}%</p>
               </ion-card-content>
             </ion-card>
           </ion-col>
@@ -109,7 +121,9 @@
               <ion-card-content>
                 <img [src]="getWeatherIcon(day?.weather, true)" class="weather-icon-small" />
                 <p>{{ day.temp }}{{ temperatureUnit === 'metric' ? '°C' : '°F' }}</p>
+                <p class="description">{{ day.description }}</p>
                 <p>Wind: {{ day.wind }}</p>
+                <p>Humidity: {{ day.humidity }}%</p>
               </ion-card-content>
             </ion-card>
           </ion-col>
@@ -128,5 +142,4 @@
       </div>
     </div>
   </div>
-
 </ion-content>
